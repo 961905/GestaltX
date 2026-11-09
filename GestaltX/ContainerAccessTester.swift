@@ -72,7 +72,7 @@ final class ContainerAccessTester: ObservableObject {
         fail(L("Device access is unavailable in the Simulator."))
         #else
         let handle = bad_query(target.path, false)
-        guard handle >= 0 {
+        guard handle >= 0 else {
             fail(L("Application container access was denied (code (handle))."))
             return
         }
