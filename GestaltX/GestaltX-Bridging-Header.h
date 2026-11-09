@@ -6,5 +6,6 @@
 //
 
 #include "worse_query.h"
+#include "bad_query.h"
 
 #import "GXEntitlementsReader.h"
