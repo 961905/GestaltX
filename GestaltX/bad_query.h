@@ -6,4 +6,5 @@
 int64_t bad_query(const char *path, bool create);
 void bad_query_release(int64_t handle);
 NSArray<NSString *> *bad_query_list_children(NSString *path, int64_t *status);
+NSArray<NSString *> *bad_query_list_all_children(NSString *path, int64_t *status);
 #endif

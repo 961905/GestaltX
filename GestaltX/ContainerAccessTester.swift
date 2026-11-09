@@ -35,6 +35,8 @@ final class ContainerAccessTester: ObservableObject {
         let id: String
     }
     @Published private(set) var containers: [ContainerRow] = []
+    @Published private(set) var customChildren: [String] = []
+    @Published var parentInput = ""
 
     struct ContainerTestStep: Identifiable {
         let id = UUID()
@@ -61,6 +63,24 @@ final class ContainerAccessTester: ObservableObject {
         }
         fail(L("Could not enumerate application containers (code (status))."))
         #endif
+    }
+
+    func scanParent() async {
+        guard !isRunning else { return }
+        let raw = parentInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard raw.hasPrefix("/") else {
+            fail(L("Enter an absolute parent directory path."))
+            return
+        }
+        isRunning = true
+        defer { isRunning = false }
+        var status: Int64 = -1
+        guard let paths = bad_query_list_all_children(raw, &status) else {
+            fail(L("Could not enumerate parent directory (code (status))."))
+            return
+        }
+        customChildren = paths.map { URL(fileURLWithPath: $0).lastPathComponent }.sorted()
+        log(L("Folders found"), String(customChildren.count), passed: true)
     }
 
     func run() async {
@@ -134,6 +154,12 @@ struct ContainerAccessTestView: View {
     var body: some View {
         Form {
             Section {
+                TextField(L("Parent directory to scan"), text: $tester.parentInput)
+                    .font(.system(.caption, design: .monospaced))
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                Button { Task { await tester.scanParent() } } label: {
+                    Label(L("List Parent Directory"), systemImage: "folder")
+                }.disabled(tester.isRunning)
                 Button { Task { await tester.scan() } } label: {
                     Label(L("Find Application Containers"), systemImage: "magnifyingglass")
                 }.disabled(tester.isRunning)
@@ -151,6 +177,16 @@ struct ContainerAccessTestView: View {
                     ForEach(tester.containers) { container in
                         Button(container.id) { tester.input = container.id }
                             .font(.system(.caption, design: .monospaced))
+                    }
+                }
+            }
+            if !tester.customChildren.isEmpty {
+                Section(L("Folders in Parent Directory")) {
+                    ForEach(tester.customChildren, id: .self) { name in
+                        Button(name) {
+                            tester.input = name
+                        }
+                        .font(.system(.caption, design: .monospaced))
                     }
                 }
             }

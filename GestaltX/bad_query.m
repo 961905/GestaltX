@@ -62,6 +62,16 @@ void bad_query_release(int64_t handle) {
 }
 
 NSArray<NSString *> *bad_query_list_children(NSString *path, int64_t *status) {
+    NSArray *all = bad_query_list_all_children(path, status);
+    NSMutableArray *paths = [NSMutableArray array];
+    for (NSString *child in all) {
+        if ([[NSUUID alloc] initWithUUIDString:child.lastPathComponent]) [paths addObject:child];
+    }
+    if (status) *status = paths.count;
+    return paths;
+}
+
+NSArray<NSString *> *bad_query_list_all_children(NSString *path, int64_t *status) {
     int64_t handle = bad_query(path.fileSystemRepresentation, false);
     if (status) *status = handle;
     if (handle < 0) return nil;
@@ -71,9 +81,7 @@ NSArray<NSString *> *bad_query_list_children(NSString *path, int64_t *status) {
     if (!names) return nil;
     NSMutableArray *paths = [NSMutableArray array];
     for (NSString *name in names) {
-        NSString *child = [path stringByAppendingPathComponent:name];
-        if ([[NSUUID alloc] initWithUUIDString:child.lastPathComponent]) [paths addObject:child];
+        [paths addObject:[path stringByAppendingPathComponent:name]];
     }
-    if (status) *status = paths.count;
     return paths;
 }
