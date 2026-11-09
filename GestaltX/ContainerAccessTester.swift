@@ -31,7 +31,10 @@ final class ContainerAccessTester: ObservableObject {
     @Published var input = ""
     @Published private(set) var isRunning = false
     @Published private(set) var steps: [ContainerTestStep] = []
-    @Published private(set) var containers: [String] = []
+    struct ContainerRow: Identifiable {
+        let id: String
+    }
+    @Published private(set) var containers: [ContainerRow] = []
 
     struct ContainerTestStep: Identifiable {
         let id = UUID()
@@ -50,7 +53,8 @@ final class ContainerAccessTester: ObservableObject {
         var status: Int64 = -1
         for root in [ContainerProbe.containerRoot, "/private" + ContainerProbe.containerRoot] {
             if let paths = bad_query_list_children(root, &status), !paths.isEmpty {
-                containers = paths.map { URL(fileURLWithPath: $0).lastPathComponent }.sorted()
+                containers = paths.map { ContainerRow(id: URL(fileURLWithPath: $0).lastPathComponent) }
+                    .sorted { $0.id < $1.id }
                 log(L("Containers found"), String(containers.count), passed: true)
                 return
             }
@@ -144,8 +148,8 @@ struct ContainerAccessTestView: View {
             }
             if !tester.containers.isEmpty {
                 Section(L("Application Container UUIDs")) {
-                    ForEach(Array(tester.containers.enumerated()), id: .offset) { _, uuid in
-                        Button(uuid) { tester.input = uuid }
+                    ForEach(tester.containers) { container in
+                        Button(container.id) { tester.input = container.id }
                             .font(.system(.caption, design: .monospaced))
                     }
                 }
