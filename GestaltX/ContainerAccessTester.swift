@@ -144,7 +144,7 @@ struct ContainerAccessTestView: View {
             }
             if !tester.containers.isEmpty {
                 Section(L("Application Container UUIDs")) {
-                    ForEach(tester.containers, id: { $0 }) { uuid in
+                    ForEach(Array(tester.containers.enumerated()), id: .offset) { _, uuid in
                         Button(uuid) { tester.input = uuid }
                             .font(.system(.caption, design: .monospaced))
                     }
