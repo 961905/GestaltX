@@ -2,6 +2,7 @@
 // Copyright (C) 2026 huamidev
 import Foundation
 import SwiftUI
+import Combine
 
 /// Nonisolated helpers so tests can exercise resolution and probing on any thread.
 enum ContainerProbe {
