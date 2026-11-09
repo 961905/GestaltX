@@ -35,7 +35,7 @@ final class ContainerAccessTester: ObservableObject {
         let id: String
     }
     @Published private(set) var containers: [ContainerRow] = []
-    @Published private(set) var customChildren: [String] = []
+    @Published private(set) var customChildren: [ContainerRow] = []
     @Published var parentInput = ""
 
     struct ContainerTestStep: Identifiable {
@@ -79,7 +79,8 @@ final class ContainerAccessTester: ObservableObject {
             fail(L("Could not enumerate parent directory (code (status))."))
             return
         }
-        customChildren = paths.map { URL(fileURLWithPath: $0).lastPathComponent }.sorted()
+        customChildren = paths.map { ContainerRow(id: URL(fileURLWithPath: $0).lastPathComponent) }
+            .sorted { $0.id < $1.id }
         log(L("Folders found"), String(customChildren.count), passed: true)
     }
 
@@ -182,9 +183,9 @@ struct ContainerAccessTestView: View {
             }
             if !tester.customChildren.isEmpty {
                 Section(L("Folders in Parent Directory")) {
-                    ForEach(tester.customChildren, id: .self) { name in
-                        Button(name) {
-                            tester.input = name
+                    ForEach(tester.customChildren) { child in
+                        Button(child.id) {
+                            tester.input = child.id
                         }
                         .font(.system(.caption, design: .monospaced))
                     }
