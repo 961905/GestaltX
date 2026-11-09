@@ -113,6 +113,18 @@ struct ContentView: View {
                     LabeledContent("CacheExtra", value: String(document.extra.count))
                 }
             }
+            Section(L("Diagnostics")) {
+                Button {
+                    UIPasteboard.general.string = appContainerUUID
+                    model.message = L("Container UUID copied")
+                } label: {
+                    LabeledContent {
+                        Text(appContainerUUID).font(.system(.caption, design: .monospaced)).lineLimit(1)
+                    } label: {
+                        Label(L("App Container UUID"), systemImage: "doc.on.doc")
+                    }
+                }
+            }
             Section {
                 Button { Task { await model.connect() } } label: {
                     Label(L(model.isBusy ? "Reading…" : model.hasDocument ? "Read Again" : "Read MobileGestalt"), systemImage: "arrow.clockwise")
@@ -159,6 +171,14 @@ struct ContentView: View {
         }
         .navigationTitle("GestaltX")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { if model.isBusy { ProgressView() } } }
+    }
+
+    private var appContainerUUID: String {
+        let components = NSHomeDirectory().split(separator: "/")
+        if let index = components.firstIndex(of: "Application"), components.indices.contains(index + 1) {
+            return String(components[index + 1])
+        }
+        return NSHomeDirectory()
     }
 }
 
