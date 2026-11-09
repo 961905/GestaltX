@@ -50,7 +50,7 @@ final class ContainerAccessTester: ObservableObject {
         var status: Int64 = -1
         for root in [ContainerProbe.containerRoot, "/private" + ContainerProbe.containerRoot] {
             if let paths = bad_query_list_children(root, &status), !paths.isEmpty {
-                containers = paths.map { $0.lastPathComponent }.sorted()
+                containers = paths.map { URL(fileURLWithPath: $0).lastPathComponent }.sorted()
                 log(L("Containers found"), String(containers.count), passed: true)
                 return
             }
