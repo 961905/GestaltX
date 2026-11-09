@@ -128,6 +128,11 @@ struct ContentView: View {
                     .disabled(!model.hasDocument || model.isBusy)
                 }
             }
+            Section {
+                NavigationLink { ContainerAccessTestView() } label: {
+                    Label(L("Container Access Test"), systemImage: "shippingbox")
+                }
+            }
             Section(L("Actions")) {
                 Button { showsChanges = true } label: {
                     HStack {

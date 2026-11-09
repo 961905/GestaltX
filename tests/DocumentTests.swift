@@ -147,9 +147,28 @@ final class AccessTrace: @unchecked Sendable {
         try expect(savedLocal.source == .local && savedLocal.document.matches(document), "Local document mode")
         try expect(try Data(contentsOf: device) == originalData, "Local mode leaves device bytes untouched")
         try expect(try await local.backups().first?.source == .local, "Local backups stay local")
+        // Container access test: path resolution and probe flow, without worse_query.
+        try expect(ContainerProbe.resolveTarget("AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")?.path
+                   == ContainerProbe.containerRoot + "/AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE", "Bare container UUID resolves under the application container root")
+        try expect(ContainerProbe.resolveTarget(ContainerProbe.containerRoot + "/abc")?.path
+                   == ContainerProbe.containerRoot + "/abc", "Full path within the container root is accepted")
+        try expect(ContainerProbe.resolveTarget("/var/mobile/other") == nil, "Paths outside the application container root are rejected")
+        try expect(ContainerProbe.resolveTarget("not-a-uuid") == nil, "Malformed identifiers are rejected")
+        try expect(ContainerProbe.resolveTarget("")?.path == ContainerProbe.containerRoot, "Blank input defaults to the Application directory itself")
+        try expect(ContainerProbe.resolveTarget(ContainerProbe.containerRoot)?.path == ContainerProbe.containerRoot, "The Application directory itself is accepted")
+        let probeRoot = root.appendingPathComponent("container-probe", isDirectory: true)
+        try fm.createDirectory(at: probeRoot, withIntermediateDirectories: true)
+        ContainerProbe.handler = { target in
+            let probe = target.appendingPathComponent("probe.txt")
+            try Data("payload".utf8).write(to: probe)
+            guard try Data(contentsOf: probe) == Data("payload".utf8) else { throw GestaltFailure("Readback mismatch") }
+            try fm.removeItem(at: probe)
+            return ["write+readback+cleanup OK"]
+        }
         try await store.deleteBackup(records[0])
         let remaining = try await store.backups()
         try expect(!remaining.contains { $0.id == records[0].id }, "Backup deletion updates library")
+        ContainerProbe.handler = nil
         print("PASS: typed plist editing, nested roundtrip, durable backups, readback verification, stale-write rejection, owned restore, foreign-backup rejection, rollback, backup failure, local isolation, and extension release.")
     }
 }

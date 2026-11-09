@@ -1,0 +1,45 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version && xcodebuild -list -project GestaltX.xcodeproj
+
+      - name: Build unsigned IPA
+        run: |
+          set -o pipefail
+          xcodebuild -project GestaltX.xcodeproj \
+            -scheme GestaltX \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
+            archive -archivePath build/GestaltX.xcarchive
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -r "build/GestaltX.xcarchive/Products/Applications/GestaltX.app" Payload/
+          zip -qry GestaltX-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GestaltX-unsigned-ipa
+          path: GestaltX-unsigned.ipa
+          retention-days: 30
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: GestaltX-unsigned.ipa
